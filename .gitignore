@@ -1,0 +1,25 @@
+# Node modules
+node_modules/
+
+# Build artifacts
+dist/
+build/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+
+# Logs
+*.log
+
+# Extension packages
+*.xpi
+*.zip
+web-ext-artifacts/
+.web-ext-config.cjs
+
+.claude
