@@ -16,6 +16,7 @@ function init() {
 function setupEventListeners() {
   const addButton = document.getElementById('add-note');
   addButton.addEventListener('click', addNote);
+  setupGearMenu();
 }
 
 // ============ ADD NOTE ============
@@ -58,13 +59,29 @@ function createNoteElement(note) {
 
   const isTruncated = note.content.split('\n').length > 6 || note.content.length > 300;
 
-  div.innerHTML = `
-    <div class="note-content ${isTruncated ? 'note-truncated' : ''}">${escapeHtml(note.content)}</div>
-    <div class="note-actions">
-      <button class="note-action-btn edit" title="Editar">✏️</button>
-      <button class="note-action-btn delete" title="Apagar">🗑️</button>
-    </div>
-  `;
+  // Create note content div
+  const contentDiv = document.createElement('div');
+  contentDiv.className = 'note-content' + (isTruncated ? ' note-truncated' : '');
+  contentDiv.textContent = note.content;
+  div.appendChild(contentDiv);
+
+  // Create actions container
+  const actionsDiv = document.createElement('div');
+  actionsDiv.className = 'note-actions';
+
+  const editBtn = document.createElement('button');
+  editBtn.className = 'note-action-btn edit';
+  editBtn.title = 'Edit';
+  editBtn.textContent = '✏️';
+  actionsDiv.appendChild(editBtn);
+
+  const deleteBtn = document.createElement('button');
+  deleteBtn.className = 'note-action-btn delete';
+  deleteBtn.title = 'Delete';
+  deleteBtn.textContent = '🗑️';
+  actionsDiv.appendChild(deleteBtn);
+
+  div.appendChild(actionsDiv);
 
   // Event listeners
   div.addEventListener('click', (e) => {
@@ -73,13 +90,11 @@ function createNoteElement(note) {
     }
   });
 
-  const editBtn = div.querySelector('.edit');
   editBtn.addEventListener('click', (e) => {
     e.stopPropagation();
     startEditMode(div, note.id);
   });
 
-  const deleteBtn = div.querySelector('.delete');
   deleteBtn.addEventListener('click', (e) => {
     e.stopPropagation();
     showDeleteConfirmation(note.id);
@@ -156,21 +171,36 @@ function startEditMode(noteElement, noteId) {
 function showDeleteConfirmation(noteId) {
   const modal = document.createElement('div');
   modal.className = 'modal-overlay';
-  modal.innerHTML = `
-    <div class="modal">
-      <div class="modal-title">Delete note?</div>
-      <div class="modal-message">This action cannot be undone.</div>
-      <div class="modal-actions">
-        <button class="modal-btn cancel">Cancel</button>
-        <button class="modal-btn confirm">Delete</button>
-      </div>
-    </div>
-  `;
 
+  const modalContent = document.createElement('div');
+  modalContent.className = 'modal';
+
+  const title = document.createElement('div');
+  title.className = 'modal-title';
+  title.textContent = 'Delete note?';
+  modalContent.appendChild(title);
+
+  const message = document.createElement('div');
+  message.className = 'modal-message';
+  message.textContent = 'This action cannot be undone.';
+  modalContent.appendChild(message);
+
+  const actions = document.createElement('div');
+  actions.className = 'modal-actions';
+
+  const cancelBtn = document.createElement('button');
+  cancelBtn.className = 'modal-btn cancel';
+  cancelBtn.textContent = 'Cancel';
+  actions.appendChild(cancelBtn);
+
+  const confirmBtn = document.createElement('button');
+  confirmBtn.className = 'modal-btn confirm';
+  confirmBtn.textContent = 'Delete';
+  actions.appendChild(confirmBtn);
+
+  modalContent.appendChild(actions);
+  modal.appendChild(modalContent);
   document.body.appendChild(modal);
-
-  const cancelBtn = modal.querySelector('.cancel');
-  const confirmBtn = modal.querySelector('.confirm');
 
   cancelBtn.addEventListener('click', () => {
     modal.remove();
@@ -286,13 +316,110 @@ function loadNotes() {
   });
 }
 
+// ============ GEAR MENU (EXPORT/IMPORT) ============
+function setupGearMenu() {
+  const gearBtn = document.getElementById('gear-menu-btn');
+  const dropdown = document.getElementById('gear-dropdown');
+  const exportBtn = document.getElementById('export-btn');
+  const importBtn = document.getElementById('import-btn');
+
+  // Toggle dropdown
+  gearBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    dropdown.classList.toggle('hidden');
+  });
+
+  // Close dropdown when clicking outside
+  document.addEventListener('click', () => {
+    dropdown.classList.add('hidden');
+  });
+
+  // Prevent dropdown from closing when clicking inside it
+  dropdown.addEventListener('click', (e) => {
+    e.stopPropagation();
+  });
+
+  // Export handler
+  exportBtn.addEventListener('click', () => {
+    exportNotes();
+    dropdown.classList.add('hidden');
+  });
+
+  // Import handler
+  importBtn.addEventListener('click', () => {
+    importNotes();
+    dropdown.classList.add('hidden');
+  });
+}
+
+function exportNotes() {
+  const json = JSON.stringify(notes, null, 2);
+  const blob = new Blob([json], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'copyboard-notes.json';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+
+  console.log(`Exported ${notes.length} notes`);
+}
+
+function importNotes() {
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = '.json';
+
+  input.addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      try {
+        const imported = JSON.parse(event.target.result);
+
+        // Validate structure
+        if (!Array.isArray(imported)) {
+          throw new Error('Invalid format: expected an array');
+        }
+
+        // Filter out notes that already exist (by ID)
+        const existingIds = new Set(notes.map(n => n.id));
+        const newNotes = imported
+          .filter(note => note.id && !existingIds.has(note.id))
+          .map(note => ({
+            id: note.id,
+            content: note.content || '',
+            createdAt: note.createdAt || Date.now()
+          }));
+
+        if (newNotes.length === 0) {
+          console.log('No new notes to import');
+          return;
+        }
+
+        notes = [...newNotes, ...notes];
+        saveNotes();
+        renderNotes();
+
+        console.log(`Imported ${newNotes.length} notes (${imported.length - newNotes.length} duplicates skipped)`);
+      } catch (err) {
+        console.error('Error importing notes:', err);
+        alert('Error importing: invalid file');
+      }
+    };
+
+    reader.readAsText(file);
+  });
+
+  input.click();
+}
+
 // ============ UTILITIES ============
 function generateId() {
   return Date.now().toString(36) + Math.random().toString(36).substr(2);
-}
-
-function escapeHtml(text) {
-  const div = document.createElement('div');
-  div.textContent = text;
-  return div.innerHTML;
 }

@@ -6,6 +6,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Copyboard is a Firefox sidebar extension for managing quick notes in a post-it style interface. It uses Manifest V2 WebExtensions API and is Firefox-only (uses the sidebar API not available in Chromium browsers).
 
+**Interface Language**: All UI text is in English.
+
 ## Development Commands
 
 ```bash

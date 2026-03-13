@@ -5,14 +5,23 @@
 echo "📦 Packaging Copyboard extension..."
 
 # Build using web-ext
-web-ext build --overwrite-dest
+npx web-ext build --overwrite-dest
 
-echo "✅ Package created in web-ext-artifacts/"
+# Rename .zip to .xpi
+cd web-ext-artifacts
+for file in *.zip; do
+  if [ -f "$file" ]; then
+    mv "$file" "${file%.zip}.xpi"
+    echo "✅ Package created: ${file%.zip}.xpi"
+  fi
+done
+cd ..
+
 echo ""
 echo "📋 Next steps:"
 echo "1. Go to https://addons.mozilla.org/developers/"
 echo "2. Click 'Submit a New Add-on'"
-echo "3. Upload the .zip file from web-ext-artifacts/"
+echo "3. Upload the .xpi file from web-ext-artifacts/"
 echo ""
 echo "Note: Make sure you've updated manifest.json with:"
 echo "  - author name"

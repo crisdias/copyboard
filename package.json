@@ -1,0 +1,23 @@
+{
+  "name": "copyboard",
+  "version": "1.0.0",
+  "description": "A Firefox sidebar extension for managing quick notes in a post-it style interface.",
+  "main": "background.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/crisdias/copyboard.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/crisdias/copyboard/issues"
+  },
+  "homepage": "https://github.com/crisdias/copyboard#readme",
+  "devDependencies": {
+    "web-ext": "^9.2.0"
+  }
+}
