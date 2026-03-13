@@ -1,29 +1,24 @@
 #!/bin/bash
 
-# Script to package Copyboard extension for Mozilla Add-ons submission
+# Package Copyboard extension for distribution
 
-echo "📦 Packaging Copyboard extension..."
+set -e
 
-# Build using web-ext
-npx web-ext build --overwrite-dest
+# Build first
+bash "$(dirname "$0")/build.sh"
 
-# Rename .zip to .xpi
-cd web-ext-artifacts
-for file in *.zip; do
-  if [ -f "$file" ]; then
-    mv "$file" "${file%.zip}.xpi"
-    echo "✅ Package created: ${file%.zip}.xpi"
-  fi
-done
+echo ""
+echo "📦 Creating zip packages..."
+
+cd dist
+(cd firefox && zip -r ../copyboard-firefox.zip .)
+(cd chrome && zip -r ../copyboard-chrome.zip .)
 cd ..
 
 echo ""
-echo "📋 Next steps:"
-echo "1. Go to https://addons.mozilla.org/developers/"
-echo "2. Click 'Submit a New Add-on'"
-echo "3. Upload the .xpi file from web-ext-artifacts/"
+echo "✅ Packages created:"
+echo "   dist/copyboard-firefox.zip"
+echo "   dist/copyboard-chrome.zip"
 echo ""
-echo "Note: Make sure you've updated manifest.json with:"
-echo "  - author name"
-echo "  - homepage_url"
-echo "  - browser_specific_settings.gecko.id"
+echo "📋 Firefox: upload to https://addons.mozilla.org/developers/"
+echo "📋 Chrome:  upload to https://chrome.google.com/webstore/devconsole"
